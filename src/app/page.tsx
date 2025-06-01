@@ -38,7 +38,7 @@ export default function Home() {
           <div>
             <h2 className="flex gap-1 text-2xl items-end">
               <p>{format(parseISO(firstData?.dt_txt ??''),'EEEE')}</p>
-              <p>{format(parseISO(firstData?.dt_txt ??''),'dd.MM.yyyy')}</p>
+              <p className="text-lg">({format(parseISO(firstData?.dt_txt ??''),'dd.MM.yyyy')})</p>
             </h2>
           </div>
         </section>
