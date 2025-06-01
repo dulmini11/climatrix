@@ -2,6 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "./Components/Navbar";
+import { format, parseISO } from 'date-fns';
+
 import axios from "axios";
 
 //... other type declarations
@@ -21,6 +23,7 @@ export default function Home() {
     // },
   });
 
+  const firstData = data?.list[0];
   console.log("data",data);
 
   if (isPending) return 'Loading...';
@@ -29,7 +32,18 @@ export default function Home() {
   return (
     <div className="flex flex-col gap-4 bg-gray-100 min-h-screen">
       <Navbar />
-      <main className="px-3 max-w-7xl mx-auto flex-col gap-9 w-full pd-10 pt-4"></main>
+      <main className="px-3 max-w-7xl mx-auto flex-col gap-9 w-full pd-10 pt-4">
+        {/*today*/}
+        <section>
+          <div>
+            <h2 className="flex gap-1 text-2xl items-end">
+              <p>{format(parseISO(firstData?.dt_txt ??''),'EEEE')}</p>
+            </h2>
+          </div>
+        </section>
+        {/*7 day forcast data*/}
+        <section></section>
+      </main>
     </div>
   );
 }
