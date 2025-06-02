@@ -2,13 +2,14 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "./Components/Navbar";
-import { format, parseISO } from 'date-fns';
+import { format, fromUnixTime, parseISO } from 'date-fns';
 
 import axios from "axios";
 import Container from "./Components/Container";
 import { convertKelvinTocelsius } from "./utils/convertKelvinTocelsius";
 import WeatherIcon from "./Components/WeatherIcon";
 import WeatherDetails from "./Components/WeatherDetails";
+import { metersToKilometers } from "./utils/metersToKilometers";
 
 //... other type declarations
 
@@ -29,7 +30,6 @@ export default function Home() {
 
   const firstData = data?.list[0];
   console.log("data",data);
-
   if (isPending) return 'Loading...';
   if (error) return 'An error occurred.';
 
@@ -94,6 +94,15 @@ export default function Home() {
             {/* Right */}
             <Container className="bg-yellow-300/80 px-6 gap-4 justify-between overflow-x-auto">
               {/* Add right-side content here */}
+              <WeatherDetails 
+                visibility={metersToKilometers(firstData?.visibility ?? 10000)} 
+                airPressure={`${firstData?.main.pressure} hpa`}
+                humidity={`${firstData?.main.humidity}%`}
+                windSpeed={`${firstData?.wind.speed ?? 0} km/h`} 
+                sunrise={format(fromUnixTime(data?.city.sunrise ?? 1702949452), "H:mm")}
+                sunset={format(fromUnixTime(data?.city.sunset ?? 1702949452), "H:mm")}
+              />
+
             </Container>
           </div>
           </section>
