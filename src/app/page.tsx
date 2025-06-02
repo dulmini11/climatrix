@@ -10,6 +10,7 @@ import { convertKelvinTocelsius } from "./utils/convertKelvinTocelsius";
 import WeatherIcon from "./Components/WeatherIcon";
 import WeatherDetails from "./Components/WeatherDetails";
 import { metersToKilometers } from "./utils/metersToKilometers";
+import { convertWindSpeed } from "./utils/convertWindSpeed";
 
 //... other type declarations
 
@@ -98,9 +99,9 @@ export default function Home() {
                 visibility={metersToKilometers(firstData?.visibility ?? 10000)} 
                 airPressure={`${firstData?.main.pressure} hpa`}
                 humidity={`${firstData?.main.humidity}%`}
-                windSpeed={`${firstData?.wind.speed ?? 0} km/h`} 
                 sunrise={format(fromUnixTime(data?.city.sunrise ?? 1702949452), "H:mm")}
                 sunset={format(fromUnixTime(data?.city.sunset ?? 1702949452), "H:mm")}
+                windSpeed={convertWindSpeed(firstData?.wind.speed ?? 1.64)} 
               />
 
             </Container>
