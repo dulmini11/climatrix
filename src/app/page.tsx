@@ -7,6 +7,8 @@ import { format, parseISO } from 'date-fns';
 import axios from "axios";
 import Container from "./Components/Container";
 import { convertKelvinTocelsius } from "./utils/convertKelvinTocelsius";
+import WeatherIcon from "./Components/WeatherIcon";
+import WeatherDetails from "./Components/WeatherDetails";
 
 //... other type declarations
 
@@ -65,24 +67,39 @@ export default function Home() {
                   </span> */}
                 </p>
               </div>
-              {/*time and weather icon*/}
-              <div className="flex gap-10 sm:gap-16 overflow-x-auto w-full justify-between pr-3">
-                {data?.list.map((d,i)=>(
+               {/* Time and weather icon */}
+            <div className="flex gap-10 sm:gap-16 overflow-x-auto w-full justify-between pr-3">
+              {data?.list.map((d, i) => (
                 <div
-                    key={i}
-                    className="flex flex-col justify-between gap-2 items-center text-xs font-semibold"
-                  >
-                    <p className="whitespace-nowrap">{format(parseISO(d.dt_txt),"h:mm a")}</p>
-                    <p>{convertKelvinTocelsius(d?.main.temp?? 0)}°</p>
-                  </div>
-                ))}
-              </div>
+                  key={i}
+                  className="flex flex-col justify-between gap-2 items-center text-xs font-semibold"
+                >
+                  <p className="whitespace-nowrap">{format(parseISO(d.dt_txt), "h:mm a")}</p>
+                  <WeatherIcon iconName={d.weather[0].icon} />
+                  <p>{convertKelvinTocelsius(d?.main.temp ?? 0)}°</p>
+                </div>
+              ))}
+            </div>
             </Container>
           </div>
-        </section>
+
+          {/* left and right in same row */}
+          <div className="flex flex-row gap-4 items-center justify-between">
+            {/* Left */}
+            <Container className="w-fit justify-center flex-col px-4 items-center">
+              <p className="capitalize text-center">{firstData?.weather[0].description}</p>
+              <WeatherIcon iconName={firstData?.weather[0].icon ?? "01d"} />
+            </Container>
+
+            {/* Right */}
+            <Container className="bg-yellow-300/80 px-6 gap-4 justify-between overflow-x-auto">
+              {/* Add right-side content here */}
+            </Container>
+          </div>
+          </section>
         {/*7 day forcast data*/}
         <section></section>
-      </main>
+          </main>
     </div>
   );
 }
