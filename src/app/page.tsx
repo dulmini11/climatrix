@@ -207,8 +207,7 @@ export default function Home() {
 
         /* Forecast Item Backgrounds */
         .forecast-item-sunny {
-          background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 140, 0, 0.1) 100%);
-          border: 1px solid rgba(255, 215, 0, 0.3);
+          background: linear-gradient(135deg,rgba(255, 217, 0, 0.57) 0%,rgba(255, 204, 0, 0.68) 50%,rgba(255, 255, 255, 0.6) 100%);
         }
 
         .forecast-item-cloudy {
@@ -324,7 +323,7 @@ export default function Home() {
         }
 
         .weather-section {
-          background: rgba(255, 255, 255, 0.19);
+          background: rgba(255, 255, 255, 0);
           backdrop-filter: blur(20px);
           border-radius: 25px;
           padding: 30px;
@@ -564,7 +563,7 @@ export default function Home() {
               </Container>
 
               {/* Right */}
-              <Container className="bg-white/10 backdrop-blur-md border border-white/30 rounded-xl px-6 gap-4 justify-between overflow-x-auto shadow-md">
+              <Container className="w-full max-w-screen-xl bg-white/10 backdrop-blur-md border border-white/30 rounded-xl px-6 gap-4 justify-between overflow-x-auto shadow-md" >
                 <WeatherDetails
                   visibility={metersToKilometers(firstData?.visibility ?? 10000)}
                   airPressure={`${firstData?.main.pressure} hpa`}

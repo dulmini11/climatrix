@@ -12,6 +12,58 @@ type Props = { location?: string };
 // Use the same API key as your main component
 const API_KEY = "a262c7ae5af3f8c84330e58261f4f650";
 
+// Location mapping for accurate local names
+const locationMapping: { [key: string]: string } = {
+  "Homagama": "Maharagama",
+  "Colombo": "Colombo",
+  // Add more mappings as needed
+};
+
+// Sri Lankan cities with their approximate coordinates
+const sriLankanCities = {
+  Maharagama: { lat: 6.8441, lon: 79.9206 },
+  Homagama: { lat: 6.8439, lon: 79.9897 },
+  Colombo: { lat: 6.9271, lon: 79.8612 },
+  Nugegoda: { lat: 6.8649, lon: 79.8997 },
+  Kottawa: { lat: 6.8176, lon: 79.9732 },
+};
+
+// Helper function to calculate distance between two points in kilometers
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = R * c;
+  return distance;
+}
+
+// Function to get the most accurate location name
+function getAccurateLocationName(apiLocationName: string, lat: number, lon: number): string {
+  // First, check if we have a direct mapping
+  if (locationMapping[apiLocationName]) {
+    return locationMapping[apiLocationName];
+  }
+  
+  // Find the closest Sri Lankan city
+  let closestCity = apiLocationName;
+  let minDistance = Infinity;
+  
+  for (const [cityName, coords] of Object.entries(sriLankanCities)) {
+    const distance = calculateDistance(lat, lon, coords.lat, coords.lon);
+    if (distance < minDistance && distance < 5) { // Within 5km
+      minDistance = distance;
+      closestCity = cityName;
+    }
+  }
+  
+  return closestCity;
+}
+
 // Simple SearchBox component
 function SearchBox({ value, onChange, onSubmit }: {
   value: string;
@@ -45,7 +97,7 @@ export default function Navbar({ location }: Props) {
   const [place, setPlace] = useAtom(placeAtom);
   const [_, setLoadingCity] = useAtom(loadingCityAtom);
 
-  // Fixed the function name typo and improved the logic
+  // Improved input change handler
   async function handleInputChange(value: string) {
     setCity(value);
     
@@ -89,7 +141,7 @@ export default function Navbar({ location }: Props) {
     setError("");
   }
 
-  // Fixed the function name typo
+  // Improved search submit handler
   function handleSubmitSearch(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     
@@ -111,21 +163,61 @@ export default function Navbar({ location }: Props) {
     }, 500);
   }
 
+  // Improved current location handler with accurate location detection
   function handleCurrentLocation() {
     if (navigator.geolocation) {
       setLoadingCity(true);
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
+          
           try {
-            const response = await axios.get(
+            // Get weather data using coordinates for accuracy
+            const weatherResponse = await axios.get(
               `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}`
             );
             
+            // Try reverse geocoding for better location name
+            let locationName = weatherResponse.data.name;
+            
+            try {
+              const geocodeResponse = await axios.get(
+                `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=5&appid=${API_KEY}`
+              );
+              
+              if (geocodeResponse.data && geocodeResponse.data.length > 0) {
+                // Look for the most specific local area name
+                const locations = geocodeResponse.data;
+                
+                // Prefer local area names over larger administrative areas
+                for (const loc of locations) {
+                  if (loc.local_names && loc.local_names.en) {
+                    locationName = loc.local_names.en;
+                    break;
+                  }
+                }
+                
+                // If no local name found, use the first result
+                if (locationName === weatherResponse.data.name && locations[0]) {
+                  locationName = locations[0].name;
+                }
+              }
+            } catch (geocodeError) {
+              console.log("Reverse geocoding failed, using weather API location");
+            }
+            
+            // Apply our accurate location mapping
+            const accurateLocationName = getAccurateLocationName(locationName, latitude, longitude);
+            
+            console.log(`Coordinates: ${latitude}, ${longitude}`);
+            console.log(`API Location: ${locationName}`);
+            console.log(`Accurate Location: ${accurateLocationName}`);
+            
             setTimeout(() => {
               setLoadingCity(false);
-              setPlace(response.data.name);
+              setPlace(accurateLocationName);
             }, 500);
+            
           } catch (error) {
             console.error("Current location error:", error);
             setLoadingCity(false);
@@ -135,7 +227,27 @@ export default function Navbar({ location }: Props) {
         (error) => {
           console.error("Geolocation error:", error);
           setLoadingCity(false);
-          setError("Location access denied");
+          
+          // Provide more specific error messages
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              setError("Location access denied by user");
+              break;
+            case error.POSITION_UNAVAILABLE:
+              setError("Location information unavailable");
+              break;
+            case error.TIMEOUT:
+              setError("Location request timed out");
+              break;
+            default:
+              setError("Unknown location error");
+              break;
+          }
+        },
+        {
+          enableHighAccuracy: true, // Request more accurate location
+          timeout: 15000, // 15 seconds timeout
+          maximumAge: 300000 // 5 minutes cache
         }
       );
     } else {
@@ -148,7 +260,7 @@ export default function Navbar({ location }: Props) {
       <nav className="backdrop-blur-md bg-white/20 shadow-md sticky top-0 left-0 z-50 border-b border-white/30">
         <div className="h-[80px] w-full flex justify-between items-center max-w-7xl px-3 mx-auto">
           <div className="flex items-center justify-center gap-2">
-            <h2 className="text-gray-500 text-3xl">Weather</h2>
+            <h2 className="text-gray-800 text-3xl">Weather</h2>
             <MdWbSunny className="text-3xl mt-1 text-yellow-300" />
           </div>
 
@@ -156,7 +268,7 @@ export default function Navbar({ location }: Props) {
             <MdMyLocation
               title="Your Current Location"
               onClick={handleCurrentLocation}
-              className="text-2xl text-gray-400 hover:opacity-80 cursor-pointer"
+              className="text-2xl text-gray-400 hover:opacity-80 cursor-pointer transition-opacity"
             />
             <MdOutlineLocationOn className="text-3xl" />
             <p className="text-slate-900/80 text-sm">{location}</p>
@@ -220,7 +332,7 @@ function SuggestionBox({
         <li
           key={i}
           onClick={() => handleSuggestionClick(item)}
-          className="cursor-pointer p-1 rounded hover:bg-gray-200 text-sm"
+          className="cursor-pointer p-1 rounded hover:bg-gray-200 text-sm transition-colors"
         >
           {item}
         </li>
