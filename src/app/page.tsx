@@ -17,6 +17,52 @@ import ForecastWeatherDetail from "./Components/ForecastWeatherDetail";
 
 const API_KEY = "a262c7ae5af3f8c84330e58261f4f650"; // Consider moving this to environment variables
 
+// Function to determine weather type based on icon or description
+const getWeatherType = (weatherIcon, description) => {
+  const icon = weatherIcon?.toLowerCase() || '';
+  const desc = description?.toLowerCase() || '';
+  
+  // Clear/Sunny conditions
+  if (icon.includes('01') || desc.includes('clear') || desc.includes('sunny')) {
+    return 'sunny';
+  }
+  
+  // Rainy conditions
+  if (icon.includes('09') || icon.includes('10') || icon.includes('11') || 
+      desc.includes('rain') || desc.includes('drizzle') || desc.includes('thunder') || desc.includes('storm')) {
+    return 'rainy';
+  }
+  
+  // Cloudy conditions (default)
+  return 'cloudy';
+};
+
+// Function to get background class based on weather type
+const getWeatherBackgroundClass = (weatherType) => {
+  switch (weatherType) {
+    case 'sunny':
+      return 'sunny-bg';
+    case 'rainy':
+      return 'rainy-bg';
+    case 'cloudy':
+    default:
+      return 'cloudy-bg';
+  }
+};
+
+// Function to get forecast item background class
+const getForecastItemClass = (weatherType) => {
+  switch (weatherType) {
+    case 'sunny':
+      return 'forecast-item-sunny';
+    case 'rainy':
+      return 'forecast-item-rainy';
+    case 'cloudy':
+    default:
+      return 'forecast-item-cloudy';
+  }
+};
+
 export default function Home() {
   const [place] = useAtom(placeAtom);
   const [loadingCity] = useAtom(loadingCityAtom);
@@ -38,6 +84,10 @@ export default function Home() {
   const firstData = data?.list[0];
   console.log("data", data);
   console.log("current location", currentLocation);
+
+  // Get current weather type for main background
+  const currentWeatherType = getWeatherType(firstData?.weather[0]?.icon, firstData?.weather[0]?.description);
+  const mainBackgroundClass = getWeatherBackgroundClass(currentWeatherType);
 
   const uniqueDates = [
     ...new Set(
@@ -88,21 +138,103 @@ export default function Home() {
   return (
     <>
       <style jsx>{`
+        /* Base weather container with dynamic background */
         .weather-container {
           min-height: 100vh;
-          background: linear-gradient(135deg,rgb(0, 0, 0) 0%,rgb(43, 107, 156) 50%,rgb(1, 0, 10) 100%);
           position: relative;
           overflow-x: hidden;
+          transition: all 1s ease;
         }
 
-        .weather-container::before {
+        /* Sunny Background */
+        .sunny-bg {
+          background: linear-gradient(135deg, #FFD700 0%, #FF8C00 50%, #FF6347 100%);
+        }
+        
+        .sunny-bg::before {
           content: '';
           position: absolute;
           top: 0;
           left: 0;
           right: 0;
           bottom: 0;
+          background-image: 
+            radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+            linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.05) 50%, transparent 60%);
+          animation: sunShimmer 8s ease-in-out infinite;
           pointer-events: none;
+        }
+
+        /* Cloudy Background */
+        .cloudy-bg {
+          background: linear-gradient(135deg, #87CEEB 0%, #4682B4 50%, #2F4F4F 100%);
+        }
+        
+        .cloudy-bg::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-image: 
+            radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 60%),
+            radial-gradient(ellipse at 70% 40%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
+            radial-gradient(ellipse at 20% 60%, rgba(255, 255, 255, 0.25) 0%, transparent 40%);
+          animation: cloudFloat 12s ease-in-out infinite;
+          pointer-events: none;
+        }
+
+        /* Rainy Background */
+        .rainy-bg {
+          background: linear-gradient(135deg, #2C3E50 0%, #34495E 50%, #1C2833 100%);
+        }
+        
+        .rainy-bg::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-image: 
+            linear-gradient(110deg, transparent 40%, rgba(255, 255, 255, 0.03) 42%, rgba(255, 255, 255, 0.03) 44%, transparent 46%),
+            linear-gradient(120deg, transparent 60%, rgba(255, 255, 255, 0.02) 62%, rgba(255, 255, 255, 0.02) 64%, transparent 66%);
+          animation: rainDrop 1.5s linear infinite;
+          pointer-events: none;
+        }
+
+        /* Forecast Item Backgrounds */
+        .forecast-item-sunny {
+          background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 140, 0, 0.1) 100%);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .forecast-item-cloudy {
+          background: linear-gradient(135deg, rgba(135, 206, 235, 0.2) 0%, rgba(70, 130, 180, 0.1) 100%);
+          border: 1px solid rgba(135, 206, 235, 0.3);
+        }
+
+        .forecast-item-rainy {
+          background: linear-gradient(135deg, rgba(44, 62, 80, 0.3) 0%, rgba(52, 73, 94, 0.2) 100%);
+          border: 1px solid rgba(44, 62, 80, 0.4);
+        }
+
+        /* Animations */
+        @keyframes sunShimmer {
+          0%, 100% { opacity: 0.8; }
+          50% { opacity: 0.4; }
+        }
+
+        @keyframes cloudFloat {
+          0%, 100% { transform: translateX(0px); }
+          50% { transform: translateX(20px); }
+        }
+
+        @keyframes rainDrop {
+          0% { background-position: 0% 0%; }
+          100% { background-position: 100% 100%; }
         }
 
         .weather-loading {
@@ -212,17 +344,6 @@ export default function Home() {
           height: 15px;
         }
 
-        .weather-section::after {
-          content: '';
-          position: absolute;
-          bottom: 15px;
-          left: 0;
-          right: 0;
-          height: 8px;
-          );
-        }
-
-
         .today-header {
           display: flex;
           gap: 10px;
@@ -238,17 +359,23 @@ export default function Home() {
 
         .today-header .date {
           font-size: 1.2rem;
-          color: #7f8c8d;
+          color: rgba(255, 255, 255, 0.7);
         }
 
         .temperature-section {
-          background: linear-gradient(135deg, #fdcb6e 0%, #f39c12 100%);
-          color: white;
+          background: linear-gradient(135deg,rgb(1, 8, 42),rgb(22, 46, 184));
+          color: #fff;
           padding: 30px;
           border-radius: 20px;
           margin-bottom: 20px;
           position: relative;
           overflow: hidden;
+          box-shadow: 0 10px 30px rgba(1, 1, 16, 0.25);
+          transition: transform 0.3s ease;
+        }
+
+        .temperature-section:hover {
+          transform: translateY(-3px);
         }
 
         .temperature-section::before {
@@ -258,13 +385,20 @@ export default function Home() {
           left: -50%;
           width: 200%;
           height: 200%;
-          background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-          animation: float 6s ease-in-out infinite;
+          background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+          animation: pulse 8s ease-in-out infinite;
+          pointer-events: none;
         }
 
-        @keyframes float {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          50% { transform: translate(-20px, -20px) rotate(180deg); }
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 0.6;
+          }
+          50% {
+            transform: scale(1.2);
+            opacity: 0.2;
+          }
         }
 
         .temp-display {
@@ -308,59 +442,12 @@ export default function Home() {
           border-radius: 12px;
           min-width: 80px;
           transition: all 0.3s ease;
+          color: white;
         }
 
         .hourly-item:hover {
           transform: translateY(-5px);
           box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .weather-details-section {
-          display: flex;
-          gap: 20px;
-          align-items: stretch;
-        }
-
-        .weather-description {
-          flex: 1;
-          background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
-          color: white;
-          padding: 30px;
-          border-radius: 20px;
-          text-align: center;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .weather-description::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10 0c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10z'/%3E%3C/g%3E%3C/svg%3E");
-        }
-
-        .weather-description .description-text {
-          font-size: 1.3rem;
-          text-transform: capitalize;
-          margin-bottom: 15px;
-          position: relative;
-          z-index: 1;
-        }
-
-        .weather-details-panel {
-          flex: 2;
-          background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
-          padding: 25px;
-          border-radius: 20px;
-          position: relative;
-          overflow: hidden;
         }
 
         .forecast-section {
@@ -369,7 +456,7 @@ export default function Home() {
 
         .forecast-title {
           font-size: 2rem;
-          color: #2c3e50;
+          color: rgb(255, 255, 255);
           margin-bottom: 25px;
           text-align: center;
           position: relative;
@@ -388,17 +475,14 @@ export default function Home() {
         }
 
         .forecast-item {
-          background: rgba(255, 255, 255, 0.15);
           backdrop-filter: blur(10px);
           border-radius: 18px;
           padding: 25px;
           margin-bottom: 15px;
           transition: all 0.3s ease;
-          border: 1px solid rgba(255, 255, 255, 0.3);
           position: relative;
           overflow: hidden;
         }
-
 
         .forecast-item:hover {
           transform: translateY(-5px);
@@ -427,13 +511,6 @@ export default function Home() {
           }
         }
 
-        /* Animations */
-        @keyframes grassSway {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(2deg); }
-          75% { transform: rotate(-2deg); }
-        }
-
         @keyframes shimmer {
           0% { background-position: -1000px 0; }
           100% { background-position: 1000px 0; }
@@ -444,7 +521,7 @@ export default function Home() {
         }
       `}</style>
 
-      <div className="weather-container">
+      <div className={`weather-container ${mainBackgroundClass}`}>
         <Navbar location={currentLocation} />
         <main className="main-content">
           {/*today*/}
@@ -477,53 +554,58 @@ export default function Home() {
                 </div>
               ))}
             </div>
-{/* left and right in same row */}
-          <div className="flex flex-row gap-4 items-center justify-between">
-            {/* Left */}
-            <Container className="w-fit justify-center flex-col px-4 items-center">
-              <p className="capitalize text-center">{firstData?.weather[0].description}</p>
-              <WeatherIcon iconName={firstData?.weather[0].icon ?? "01d"} />
-            </Container>
 
-            {/* Right */}
-            <Container className="bg-white/10 backdrop-blur-md border border-white/30 rounded-xl px-6 gap-4 justify-between overflow-x-auto shadow-md">
+            {/* left and right in same row */}
+            <div className="flex flex-row gap-4 items-center justify-between mt-5">
+              {/* Left */}
+              <Container className="w-fit justify-center flex-col px-4 items-center">
+                <p className="capitalize text-center text-white">{firstData?.weather[0].description}</p>
+                <WeatherIcon iconName={firstData?.weather[0].icon ?? "01d"} />
+              </Container>
 
-              <WeatherDetails
-                visibility={metersToKilometers(firstData?.visibility ?? 10000)}
-                airPressure={`${firstData?.main.pressure} hpa`}
-                humidity={`${firstData?.main.humidity}%`}
-                sunrise={format(fromUnixTime(data?.city.sunrise ?? 1702949452), "H:mm")}
-                sunset={format(fromUnixTime(data?.city.sunset ?? 1702949452), "H:mm")}
-                windSpeed={convertWindSpeed(firstData?.wind.speed ?? 1.64)}
-              />
-            </Container>
-          </div>
-        </section>
+              {/* Right */}
+              <Container className="bg-white/10 backdrop-blur-md border border-white/30 rounded-xl px-6 gap-4 justify-between overflow-x-auto shadow-md">
+                <WeatherDetails
+                  visibility={metersToKilometers(firstData?.visibility ?? 10000)}
+                  airPressure={`${firstData?.main.pressure} hpa`}
+                  humidity={`${firstData?.main.humidity}%`}
+                  sunrise={format(fromUnixTime(data?.city.sunrise ?? 1702949452), "H:mm")}
+                  sunset={format(fromUnixTime(data?.city.sunset ?? 1702949452), "H:mm")}
+                  windSpeed={convertWindSpeed(firstData?.wind.speed ?? 1.64)}
+                />
+              </Container>
+            </div>
+          </section>
 
           {/* 7 day forecast data */}
           <section className="weather-section">
             <div className="forecast-section">
               <h3 className="forecast-title">7-Day Forecast</h3>
-              {firstDataForEachDate.map((d, i) => (
-                <div key={i} className="forecast-item">
-                  <ForecastWeatherDetail
-                    description={d?.weather[0].description ?? ""}
-                    weatherIcon={d?.weather[0].icon ?? "01d"}
-                    date={format(parseISO(d?.dt_txt ?? ""), "EEEE")}
-                    day={format(parseISO(d?.dt_txt ?? ""), "EEEE")}
-                    feels_like={d?.main.feels_like ?? 0}
-                    temp={d?.main.temp ?? 0}
-                    temp_max={d?.main.temp_max ?? 0}
-                    temp_min={d?.main.temp_min ?? 0}
-                    airPressure={`${d?.main.pressure} hPa`}
-                    humidity={`${d?.main.humidity}%`}
-                    sunrise={format(fromUnixTime(data?.city.sunrise ?? 1702517657), "H:mm")}
-                    sunset={format(fromUnixTime(data?.city.sunset ?? 1702517657), "H:mm")}
-                    visibility={`${metersToKilometers(d?.visibility ?? 10000)}`}
-                    windSpeed={convertWindSpeed(d?.wind.speed ?? 1.64)}
-                  />
-                </div>
-              ))}
+              {firstDataForEachDate.map((d, i) => {
+                const forecastWeatherType = getWeatherType(d?.weather[0]?.icon, d?.weather[0]?.description);
+                const forecastItemClass = getForecastItemClass(forecastWeatherType);
+                
+                return (
+                  <div key={i} className={`forecast-item ${forecastItemClass}`}>
+                    <ForecastWeatherDetail
+                      description={d?.weather[0].description ?? ""}
+                      weatherIcon={d?.weather[0].icon ?? "01d"}
+                      date={d?.dt_txt ? format(parseISO(d.dt_txt), "EEEE") : "Unknown"}
+                      day={d?.dt_txt ? format(parseISO(d.dt_txt), "EEEE") : "Unknown"}
+                      feels_like={d?.main.feels_like ?? 0}
+                      temp={d?.main.temp ?? 0}
+                      temp_max={d?.main.temp_max ?? 0}
+                      temp_min={d?.main.temp_min ?? 0}
+                      airPressure={`${d?.main.pressure} hPa`}
+                      humidity={`${d?.main.humidity}%`}
+                      sunrise={format(fromUnixTime(data?.city.sunrise ?? 1702517657), "H:mm")}
+                      sunset={format(fromUnixTime(data?.city.sunset ?? 1702517657), "H:mm")}
+                      visibility={`${metersToKilometers(d?.visibility ?? 10000)}`}
+                      windSpeed={convertWindSpeed(d?.wind.speed ?? 1.64)}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </section>
         </main>

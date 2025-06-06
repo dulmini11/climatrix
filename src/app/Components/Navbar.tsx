@@ -146,9 +146,9 @@ export default function Navbar({ location }: Props) {
   return (
     <>
       <nav className="backdrop-blur-md bg-white/20 shadow-md sticky top-0 left-0 z-50 border-b border-white/30">
-        <div className="h-[80px] w-full flex justify-between items-center max-w-7xl px-4 md:px-6 mx-auto text-white">
+        <div className="h-[80px] w-full flex justify-between items-center max-w-7xl px-3 mx-auto">
           <div className="flex items-center justify-center gap-2">
-            <h2 className="text-white text-3xl font-semibold tracking-wide drop-shadow">Weather</h2>
+            <h2 className="text-gray-500 text-3xl">Weather</h2>
             <MdWbSunny className="text-3xl mt-1 text-yellow-300" />
           </div>
 
